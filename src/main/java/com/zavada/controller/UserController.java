@@ -1,0 +1,146 @@
+package com.zavada.controller;
+
+import java.io.IOException;
+import java.security.Principal;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
+
+import com.zavada.domain.CreateAdvRequest;
+import com.zavada.domain.EditUserRequest;
+import com.zavada.domain.UserProfileRequest;
+import com.zavada.entity.Car;
+import com.zavada.entity.UserEntity;
+import com.zavada.entity.enumeration.BodyType;
+import com.zavada.entity.enumeration.Color;
+import com.zavada.entity.enumeration.FuelType;
+import com.zavada.mapper.CarMapper;
+import com.zavada.mapper.UserMapper;
+import com.zavada.service.CarService;
+import com.zavada.service.UserService;
+import com.zavada.service.utils.CustomFileUtils;
+
+@Controller
+//@RequestMapping("{firstName}")
+@SessionAttributes("editModel")
+public class UserController {
+
+	@Autowired UserService userService;
+	@Autowired CarService carService;
+	
+	@GetMapping("user")
+	public String showUserProfile(Model model, Principal principal,@PathVariable("firstName") String firstName) throws IOException {
+		System.out.println("Secured user name: " + principal.getName());
+		UserEntity entity = userService.findUserByEmail(principal.getName());	
+		
+		UserEntity entity1 = userService.findUserByFirstName(principal.getName());	
+		
+		
+		if(entity == null) return "redirect:/";
+		//if (firstName != entity.getFirstName()) return "redirect:/{firstName}";
+		UserProfileRequest request = UserMapper.entityToUserProfile(entity);
+		
+		UserProfileRequest request1 = UserMapper.entityToUserProfile(entity1);
+		
+		
+		model.addAttribute("firstName", request1);
+		model.addAttribute("userProfile", request);
+		model.addAttribute("imageSrc",
+				CustomFileUtils.getImage("user_" + entity.getId(), entity.getImagePath()));
+		return "user/profile";
+	}
+	
+	@GetMapping("{firstName}/edit/{userId}")
+	public String editUserProfile(
+			@PathVariable("userId") int userId,
+			Model model, Principal principal,@PathVariable("firstName") String firstName) {
+		UserEntity entity = userService.findUserByEmail(principal.getName());
+		
+		if (userId != entity.getId()) return "redirect:/user";
+		EditUserRequest request = UserMapper.entityToEditUser(entity);
+		model.addAttribute("editModel", request);
+		return "user/edit";
+	}
+	
+	@PostMapping("{firstName}/edit/{userId}")
+	public String saveEditedProfile(
+			@ModelAttribute("editModel") EditUserRequest request,
+			@PathVariable("userId") int userId,@PathVariable("firstName") String firstName
+			) throws IOException {
+		
+		if (request.getFile().isEmpty()) {
+			return "redirect:/user/edit/" + userId;
+		}
+		
+		UserEntity entity = UserMapper.editRequestToEntity(request);
+		System.out.println("pass: " + entity.getPassword());
+		System.out.println("pass: " + entity.getRole());
+		
+		userService.editUser(entity);		
+		CustomFileUtils.createFolder("user_" + entity.getId());
+		CustomFileUtils.createImage("user_" + entity.getId(), request.getFile());
+		
+		return "redirect:/user";
+	}
+	
+	// --- Advertisement
+	
+	@GetMapping("{firstName}/{userId}/create")
+	public String createAdvertisement(
+			@PathVariable("userId") int userId, 
+			Model model, @PathVariable("firstName") String firstName,
+			Principal principal) {
+		UserEntity entity = userService.findUserByEmail(principal.getName());
+		CreateAdvRequest advRequest = new CreateAdvRequest();
+		advRequest.setEntity(entity);
+		
+		model.addAttribute("title", "Create Advertisement");
+		// model.addAttribute("userId", userId);
+		model.addAttribute("advModel", advRequest);
+		model.addAttribute("colors", Color.values());
+		model.addAttribute("fuelTypes", FuelType.values());
+		model.addAttribute("bodyTypes", BodyType.values());
+		
+		return "user/create-adv";
+	}
+	
+	@PostMapping("{firstName}/{userId}/create")
+	public String createAdvertisementForm(
+			@ModelAttribute("advModel") CreateAdvRequest request,
+			@PathVariable("userId") int userId ,@PathVariable("firstName") String firstName
+			) throws IOException {
+		UserEntity entity = userService.findUserById(userId);
+		Car car = CarMapper.advRequestToCar(request);
+		car.setUser(entity);
+		
+		carService.saveCar(car);
+		
+		CustomFileUtils.createFolder("car_" + car.getId());
+		CustomFileUtils.createImage("car_" + car.getId(), request.getCarImage());
+		return "redirect:/user";
+	}
+	
+	@GetMapping("{firstName}/advs")
+	public String showAllAdvertisement(Model model,@PathVariable("firstName") String firstName) throws IOException {
+		List<Car> cars = carService.findAllCars();
+		for(int i = 0; i < cars.size(); i++) {
+			String image = cars.get(i).getCarImage();
+			cars.get(i).setCarImage(
+					CustomFileUtils.getImage(
+							"car_" + cars.get(i).getId(), 
+							image));
+		}
+		
+		model.addAttribute("carList", cars);
+		return "user/advs";
+	}
+	
+}
