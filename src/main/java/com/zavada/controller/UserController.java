@@ -29,29 +29,29 @@ import com.zavada.service.UserService;
 import com.zavada.service.utils.CustomFileUtils;
 
 @Controller
-//@RequestMapping("{firstName}")
+@RequestMapping("/user")
 @SessionAttributes("editModel")
 public class UserController {
 
 	@Autowired UserService userService;
 	@Autowired CarService carService;
 	
-	@GetMapping("user")
+	@GetMapping("/{firtName}")
 	public String showUserProfile(Model model, Principal principal,@PathVariable("firstName") String firstName) throws IOException {
+	
 		System.out.println("Secured user name: " + principal.getName());
 		UserEntity entity = userService.findUserByEmail(principal.getName());	
 		
-		UserEntity entity1 = userService.findUserByFirstName(principal.getName());	
+
 		
 		
 		if(entity == null) return "redirect:/";
-		//if (firstName != entity.getFirstName()) return "redirect:/{firstName}";
+		if (firstName != entity.getFirstName()) return "redirect:/{firstName}";
 		UserProfileRequest request = UserMapper.entityToUserProfile(entity);
+	
 		
-		UserProfileRequest request1 = UserMapper.entityToUserProfile(entity1);
 		
-		
-		model.addAttribute("firstName", request1);
+		//model.addAttribute("firstName", request);
 		model.addAttribute("userProfile", request);
 		model.addAttribute("imageSrc",
 				CustomFileUtils.getImage("user_" + entity.getId(), entity.getImagePath()));
@@ -61,7 +61,7 @@ public class UserController {
 	@GetMapping("{firstName}/edit/{userId}")
 	public String editUserProfile(
 			@PathVariable("userId") int userId,
-			Model model, Principal principal,@PathVariable("firstName") String firstName) {
+			Model model, Principal principal) {
 		UserEntity entity = userService.findUserByEmail(principal.getName());
 		
 		if (userId != entity.getId()) return "redirect:/user";
@@ -73,7 +73,7 @@ public class UserController {
 	@PostMapping("{firstName}/edit/{userId}")
 	public String saveEditedProfile(
 			@ModelAttribute("editModel") EditUserRequest request,
-			@PathVariable("userId") int userId,@PathVariable("firstName") String firstName
+			@PathVariable("userId") int userId
 			) throws IOException {
 		
 		if (request.getFile().isEmpty()) {
@@ -96,7 +96,7 @@ public class UserController {
 	@GetMapping("{firstName}/{userId}/create")
 	public String createAdvertisement(
 			@PathVariable("userId") int userId, 
-			Model model, @PathVariable("firstName") String firstName,
+			Model model,
 			Principal principal) {
 		UserEntity entity = userService.findUserByEmail(principal.getName());
 		CreateAdvRequest advRequest = new CreateAdvRequest();
@@ -115,7 +115,7 @@ public class UserController {
 	@PostMapping("{firstName}/{userId}/create")
 	public String createAdvertisementForm(
 			@ModelAttribute("advModel") CreateAdvRequest request,
-			@PathVariable("userId") int userId ,@PathVariable("firstName") String firstName
+			@PathVariable("userId") int userId 
 			) throws IOException {
 		UserEntity entity = userService.findUserById(userId);
 		Car car = CarMapper.advRequestToCar(request);
@@ -129,7 +129,7 @@ public class UserController {
 	}
 	
 	@GetMapping("{firstName}/advs")
-	public String showAllAdvertisement(Model model,@PathVariable("firstName") String firstName) throws IOException {
+	public String showAllAdvertisement(Model model) throws IOException {
 		List<Car> cars = carService.findAllCars();
 		for(int i = 0; i < cars.size(); i++) {
 			String image = cars.get(i).getCarImage();
