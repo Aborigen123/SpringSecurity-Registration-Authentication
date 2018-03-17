@@ -38,7 +38,7 @@
 		     
 		     <sec:authorize access="isAuthenticated()">
 		     		<sec:authentication property="principal.username" var="username"/>
-	     			<li><a href="/user">${username}</a></li>
+	     			<li><a href="/user/{firtName}">${username}</a></li>
 
 					<c:url var="logoutUrl" value="/logout" />
 					<form:form action="${logoutUrl}" method="post" cssStyle="padding-top: 7px;">

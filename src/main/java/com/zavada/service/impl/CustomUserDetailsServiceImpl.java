@@ -17,7 +17,7 @@ public class CustomUserDetailsServiceImpl implements UserDetailsService {
 	private UserRepository userRepository;
 
 	@Override
-	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {//реалізація пошуку для security
 		UserEntity entity = userRepository.findUserByEmail(email);
 		if(entity == null) throw new UsernameNotFoundException("User not found");
 		

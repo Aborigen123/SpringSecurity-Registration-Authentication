@@ -11,17 +11,17 @@
 
 <c:choose>
 	<c:when test="${title == null}">
-		<tiles:putAttribute name="title" value="App title" />
+		<tiles:putAttribute name="title" value="App title" /> <!-- якщо title == null  то підставить App title -->
 	</c:when>
 	<c:otherwise>
-		<tiles:putAttribute name="title" value="${title}" />
+		<tiles:putAttribute name="title" value="${title}" /><!--  якщо щось прийшло то встановлюємо і передаємо -->
 	</c:otherwise>
 </c:choose>
 
 <title>
-	<tiles:getAsString name="title"></tiles:getAsString>
+	<tiles:getAsString name="title"></tiles:getAsString> <!-- передаємо в XML -->
 </title>
-
+<!--  -->
 <jsp:include page="/WEB-INF/include/style-include.jsp" />
 </head>
 

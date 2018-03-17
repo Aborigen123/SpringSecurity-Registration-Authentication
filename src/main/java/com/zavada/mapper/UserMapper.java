@@ -11,7 +11,7 @@ import com.zavada.entity.enumeration.Role;
 
 public interface UserMapper {
 
-	public static User toSecurityUser(UserEntity entity) {
+	public static User toSecurityUser(UserEntity entity) {//конвертує юзерна в спрінгового
 		return new User(entity.getEmail(), entity.getPassword(), AuthorityUtils.createAuthorityList(String.valueOf(entity.getRole())));
 	}
 	
